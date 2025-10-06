@@ -1,0 +1,331 @@
+/* ===== Global Styles ===== */
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  background: #f4f9ff; /* biru lembut */
+  color: #333;
+}
+
+/* ===== Header ===== */
+header {
+  background: linear-gradient(90deg, #1e90ff, #4facfe);
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo {
+  height: 20px;    
+  width: auto;     
+  display: inline-block;
+}
+
+/* Logo Header */
+.logo-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.logo-header .logo {
+  height: 60px; /* kecilkan ikut suka, contoh 60px */
+  width: auto;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.logout {
+  color: white;
+  text-decoration: none;
+  background: #ff4d4d;
+  padding: 8px 15px;
+  border-radius: 5px;
+  transition: 0.3s;
+}
+.logout:hover { background: #cc0000; }
+
+/* ===== Login & Signup ===== */
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-container {
+  width: 320px;
+  padding: 30px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.login-container h2 {
+  text-align: center;
+  color: #1e90ff;
+  margin-bottom: 20px;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.login-container button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: #1e90ff;
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.login-container button:hover { background: #005fa3; }
+
+/* ===== Dashboard Cards ===== */
+.dashboard {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 60px 20px;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: 280px;
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.card i {
+  font-size: 50px;
+  color: #1e90ff;
+  margin-bottom: 15px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+.card h2 {
+  color: #1e90ff;
+  margin: 10px 0;
+}
+
+.card p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.card button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #1e90ff;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+.card button:hover { background: #005fa3; }
+
+/* ===== Forms & Tables ===== */
+.form-container, .table-container {
+  width: 80%;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+label {
+  font-weight: bold;
+  color: #1e90ff;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  background: #1e90ff;
+  color: white;
+  cursor: pointer;
+}
+button:hover { background: #005fa3; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+th, td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+th {
+  background: #1e90ff;
+  color: white;
+}
+
+/* === Global Popup Styles === */
+.popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #ffdddd;
+  border: 1px solid #ff4d4d;
+  color: #cc0000;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== */
+/* TOAST NOTIFICATION */
+/* ===================== */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #f44336;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 9999;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+
+/* ===========================
+   MODAL / MESSAGE BOX (center)
+   =========================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0; /* top:0; right:0; bottom:0; left:0; */
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .18s ease, visibility .18s ease;
+}
+
+/* when visible */
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px 22px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  text-align: left;
+  font-family: inherit;
+}
+
+.modal-box .modal-title {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color: #b71c1c; /* red-ish for error */
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.modal-box .modal-message {
+  color: #333;
+  margin-bottom: 16px;
+  line-height: 1.45;
+  font-size: 15px;
+}
+
+.modal-box .modal-actions {
+  text-align: right;
+}
+
+.modal-box .modal-actions button {
+  background: #1e90ff;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.modal-box .modal-actions button:hover {
+  background: #0b66c2;
+}
+
+/* small responsive tweak */
+@media (max-width:480px) {
+  .modal-box { padding: 16px; max-width: 92%; }
+  .modal-box .modal-title { font-size: 15px; }
+  .modal-box .modal-message { font-size: 14px; }
+}
+
