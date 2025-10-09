@@ -329,3 +329,38 @@ th {
   .modal-box .modal-message { font-size: 14px; }
 }
 
+/* ===== Quiz Interface Fix ===== */
+.quiz-container {
+  text-align: left !important;
+  width: 80%;
+  margin: 30px auto;
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.quiz-question {
+  margin-bottom: 25px;
+}
+
+.quiz-question h3 {
+  margin-bottom: 12px;
+  color: #1e90ff;
+  font-weight: 600;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.quiz-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #1e90ff; /* warna biru sama tema */
+  flex-shrink: 0;
+}
