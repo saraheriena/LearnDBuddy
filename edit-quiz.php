@@ -9,18 +9,13 @@ $lecturer_id = $_SESSION['lecturer_id'];
 if (isset($_POST['create_quiz'])) {
     $title = mysqli_real_escape_string($conn, $_POST['title']);
     $class_id = $_POST['class_id'];
+    $topic = $_POST['topic'] ?? null;
 
-    // Kalau pilih "All Classes", simpan NULL
-    if ($class_id == "0" || $class_id == "") {
-        $class_id_sql = "NULL";
-    } else {
-        $class_id_sql = intval($class_id);
-    }
+    $class_id_sql = ($class_id == "0" || $class_id == "") ? "NULL" : intval($class_id);
+    $topic_sql = ($topic == "" || $topic == "0") ? "NULL" : intval($topic);
 
-    $sql = "INSERT INTO quizzes (title, class_id) VALUES ('$title', $class_id_sql)";
-    if (!mysqli_query($conn, $sql)) {
-        die("Error inserting quiz: " . mysqli_error($conn));
-    }
+    $sql = "INSERT INTO quizzes (title, class_id, topic) VALUES ('$title', $class_id_sql, $topic_sql)";
+    if (!mysqli_query($conn, $sql)) die("Error inserting quiz: " . mysqli_error($conn));
 
     $quiz_id = mysqli_insert_id($conn);
     header("Location: add-questions.php?quiz_id=$quiz_id");
@@ -40,17 +35,13 @@ if (isset($_POST['update_quiz'])) {
     $quiz_id = intval($_POST['quiz_id']);
     $title = mysqli_real_escape_string($conn, $_POST['title']);
     $class_id = $_POST['class_id'];
+    $topic = $_POST['topic'] ?? null;
 
-    if ($class_id == "0" || $class_id == "") {
-        $class_id_sql = "NULL";
-    } else {
-        $class_id_sql = intval($class_id);
-    }
+    $class_id_sql = ($class_id == "0" || $class_id == "") ? "NULL" : intval($class_id);
+    $topic_sql = ($topic == "" || $topic == "0") ? "NULL" : intval($topic);
 
-    $sql = "UPDATE quizzes SET title='$title', class_id=$class_id_sql WHERE quiz_id=$quiz_id";
-    if (!mysqli_query($conn, $sql)) {
-        die("Error updating quiz: " . mysqli_error($conn));
-    }
+    $sql = "UPDATE quizzes SET title='$title', class_id=$class_id_sql, topic=$topic_sql WHERE quiz_id=$quiz_id";
+    if (!mysqli_query($conn, $sql)) die("Error updating quiz: " . mysqli_error($conn));
 
     header("Location: edit-quiz.php");
     exit;
@@ -59,10 +50,11 @@ if (isset($_POST['update_quiz'])) {
 // Ambil semua kelas lecturer
 $classes = mysqli_query($conn, "SELECT * FROM classes WHERE lecturer_id=$lecturer_id");
 
-// Get all quizzes (termasuk yang class_id NULL)
+// Ambil semua quiz (termasuk yang class_id NULL)
 $quiz_query = "SELECT q.*, c.class_name 
                FROM quizzes q 
-               LEFT JOIN classes c ON q.class_id=c.class_id";
+               LEFT JOIN classes c ON q.class_id=c.class_id
+               ORDER BY q.quiz_id DESC";
 $quizzes = mysqli_query($conn, $quiz_query);
 ?>
 <!DOCTYPE html>
@@ -83,6 +75,7 @@ $quizzes = mysqli_query($conn, $quiz_query);
     <h3>Create New Quiz</h3>
     <form method="post">
       <input type="text" name="title" placeholder="Enter quiz title" required>
+
       <select name="class_id" required>
         <option value="">-- Select Class --</option>
         <option value="0">All Classes</option>
@@ -90,6 +83,16 @@ $quizzes = mysqli_query($conn, $quiz_query);
           <option value="<?= $c['class_id']; ?>"><?= htmlspecialchars($c['class_name']); ?></option>
         <?php } ?>
       </select>
+
+      <select name="topic" required>
+        <option value="">-- Select Topic --</option>
+        <option value="1">Topic 1</option>
+        <option value="2">Topic 2</option>
+        <option value="3">Topic 3</option>
+        <option value="4">Topic 4</option>
+        <option value="5">Topic 5</option>
+      </select>
+
       <button type="submit" name="create_quiz">Create Quiz</button>
     </form>
     <hr>
@@ -98,16 +101,15 @@ $quizzes = mysqli_query($conn, $quiz_query);
     <h3>All Quizzes</h3>
     <table>
       <thead>
-        <tr><th>ID</th><th>Title</th><th>Class</th><th>Actions</th></tr>
+        <tr><th>ID</th><th>Title</th><th>Class</th><th>Topic</th><th>Actions</th></tr>
       </thead>
       <tbody>
         <?php while($q = mysqli_fetch_assoc($quizzes)) { ?>
           <tr>
             <td><?= $q['quiz_id']; ?></td>
             <td><?= htmlspecialchars($q['title']); ?></td>
-            <td>
-              <?= is_null($q['class_id']) ? 'All Classes' : htmlspecialchars($q['class_name'] ?? 'Unassigned'); ?>
-            </td>
+            <td><?= is_null($q['class_id']) ? 'All Classes' : htmlspecialchars($q['class_name'] ?? 'Unassigned'); ?></td>
+            <td><?= $q['topic'] ? 'Topic '.$q['topic'] : '-'; ?></td>
             <td>
               <form method="post" style="display:inline;">
                 <input type="hidden" name="quiz_id" value="<?= $q['quiz_id']; ?>">
@@ -122,14 +124,16 @@ $quizzes = mysqli_query($conn, $quiz_query);
                   }
                   ?>
                 </select>
+                <select name="topic">
+                  <option value="0" <?= !$q['topic'] ? 'selected' : ''; ?>>No Topic</option>
+                  <?php for ($t=1; $t<=5; $t++): ?>
+                    <option value="<?= $t; ?>" <?= ($q['topic']==$t)?'selected':''; ?>>Topic <?= $t; ?></option>
+                  <?php endfor; ?>
+                </select>
                 <button type="submit" name="update_quiz">Update</button>
               </form>
-              <a href="edit-quiz.php?delete_quiz=<?= $q['quiz_id']; ?>" onclick="return confirm('Delete this quiz?');">
-                <button type="button">Delete</button>
-              </a>
-              <a href="add-questions.php?quiz_id=<?= $q['quiz_id']; ?>">
-                <button type="button">View/Add Questions</button>
-              </a>
+              <a href="edit-quiz.php?delete_quiz=<?= $q['quiz_id']; ?>" onclick="return confirm('Delete this quiz?');"><button type="button">Delete</button></a>
+              <a href="add-questions.php?quiz_id=<?= $q['quiz_id']; ?>"><button type="button">View/Add Questions</button></a>
             </td>
           </tr>
         <?php } ?>

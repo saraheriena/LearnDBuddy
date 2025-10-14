@@ -1,0 +1,1 @@
+<?php $_GET['topic'] = 5; require 'view_topic.php';

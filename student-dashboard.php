@@ -9,7 +9,7 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 // Ambil nama student
-$student_name = $_SESSION['fullname'];
+$student_name = $_SESSION['student_name'] ?? 'Student';
 ?>
 <!DOCTYPE html>
 <html lang="en">

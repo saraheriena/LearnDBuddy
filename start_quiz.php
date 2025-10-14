@@ -151,10 +151,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="question-block">
           <p><?= $no++ ?>. <?= htmlspecialchars($row['question_text']); ?></p>
           <?php foreach (['A','B','C','D'] as $opt): ?>
-            <label class="option">
-              <input type="radio" name="answers[<?= $row['question_id']; ?>]" value="<?= $opt; ?>" required>
-              <?= "$opt. " . htmlspecialchars($row["option_" . strtolower($opt)]); ?>
-            </label>
+            <label class="option" style="display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:10px; padding:10px 12px; border:1px solid #ddd; border-radius:6px; background:#fafafa; margin:6px 0;">
+  <input type="radio" name="answers[<?= $row['question_id']; ?>]" value="<?= $opt; ?>" required style="transform:scale(1.2); accent-color:#007bff;">
+  <span style="font-weight:600; color:#007bff;">
+    <?= "$opt. " ?>
+  </span>
+  <span>
+    <?= htmlspecialchars($row["option_" . strtolower($opt)]); ?>
+  </span>
+</label>
+
+
           <?php endforeach; ?>
         </div>
       <?php endwhile; ?>
