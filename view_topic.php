@@ -207,13 +207,7 @@ $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
 <main class="dashboard" style="flex-direction:column;align-items:stretch;gap:16px;padding-top:16px;">
   <div class="topic-wrap">
 
-    <!-- Kad: Important Notes -->
-    <div class="form-container">
-      <h3 class="section-title"><i class="fas fa-star"></i> Important Notes</h3>
-      <div style="color:#333; line-height:1.6;">
-        <?= nl2br(htmlspecialchars($importantNotes, ENT_QUOTES, 'UTF-8')); ?>
-      </div>
-    </div>
+   
 
     <!-- Kad: PDF Files (download 1-1 & ZIP Topik Ini) -->
     <div class="form-container">
@@ -270,14 +264,14 @@ $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
           <?php endforeach; ?>
         </section>
       <?php else: ?>
-        <p style="margin:0;color:#666;">Tiada video untuk topik ini.</p>
+        <p style="margin:0;color:#666;">No video available for this topic yet</p>
       <?php endif; ?>
     </div>
 
     <!-- Kad: Quiz untuk topik ini -->
 <div class="form-container" style="text-align:center;">
   <h3 class="section-title" style="justify-content:center;">
-    <i class="fas fa-question-circle"></i> Topic <?= htmlspecialchars($topic) ?> Quiz
+    <i class="fas fa-question-circle"></i> Ready to test your knowledge
   </h3>
 
   <?php if (!empty($quizzes)): ?>

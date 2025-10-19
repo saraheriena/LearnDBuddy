@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "db.php";
+
 if (!isset($_SESSION['lecturer_id'])) {
     header("Location: login.php");
     exit;
@@ -8,30 +9,9 @@ if (!isset($_SESSION['lecturer_id'])) {
 
 $lecturer_id = $_SESSION['lecturer_id'];
 
-/* --- Ambil semua kelas & quiz untuk dropdown --- */
+// Ambil semua kelas & quiz untuk dropdown
 $classes = $conn->query("SELECT * FROM classes WHERE lecturer_id=$lecturer_id");
 $quizzes = $conn->query("SELECT * FROM quizzes WHERE class_id IS NULL OR class_id IN (SELECT class_id FROM classes WHERE lecturer_id=$lecturer_id)");
-
-/* --- Purata markah per kelas (untuk graf line) --- */
-$class_avg = $conn->query("
-    SELECT c.class_name, q.title, AVG(r.percentage) AS avg_score
-    FROM results r
-    JOIN students s ON r.student_id = s.student_id
-    JOIN classes c ON s.class_id = c.class_id
-    JOIN quizzes q ON r.quiz_id = q.quiz_id
-    WHERE c.lecturer_id=$lecturer_id
-    GROUP BY c.class_id, q.quiz_id
-    ORDER BY c.class_id, q.quiz_id
-");
-
-$data = [];
-while ($row = $class_avg->fetch_assoc()) {
-    $class = $row['class_name'];
-    $topic = $row['title'];
-    $data[$class][$topic] = round($row['avg_score'], 2);
-}
-
-$topics = ["Topic 1","Topic 2","Topic 3","Topic 4","Topic 5"];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -104,47 +84,67 @@ $topics = ["Topic 1","Topic 2","Topic 3","Topic 4","Topic 5"];
 </main>
 
 <script>
-const topics = <?= json_encode($topics) ?>;
-const rawData = <?= json_encode($data) ?>;
-const colors = ['#1e90ff','#ff7f50','#3cb371','#ffb347','#9370db','#ff69b4'];
+let chart; // Global chart instance
 
-// --- Line Chart ---
-const datasets = Object.keys(rawData).map((cls,i)=>({
-  label: cls,
-  data: topics.map(t=>rawData[cls][t]||0),
-  borderColor: colors[i%colors.length],
-  backgroundColor: colors[i%colors.length],
-  fill:false,
-  tension:.3,
-  pointRadius:5
-}));
+// --- Fungsi untuk load chart ---
+function loadChart() {
+  const classId = document.getElementById('classFilter').value;
+  const quizId = document.getElementById('quizFilter').value;
 
-new Chart(document.getElementById('classChart'),{
-  type:'line',
-  data:{labels:topics,datasets},
-  options:{
-    responsive:true,
-    scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'Average %'}}},
-    plugins:{title:{display:true,text:'Average Quiz Score per Topic'}}
-  }
-});
+  fetch(`view-result-graph.php?class_id=${classId}&quiz_id=${quizId}`)
+    .then(res => res.json())
+    .then(data => {
+      const ctx = document.getElementById('classChart').getContext('2d');
+      if (chart) chart.destroy(); // Reset chart sebelum buat baru
 
-// --- Table Result (AJAX) ---
-function loadResults() {
-    const classId = document.getElementById('classFilter').value;
-    const quizId = document.getElementById('quizFilter').value;
-
-    fetch(`view-result-data.php?class_id=${classId}&quiz_id=${quizId}`)
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById('resultTable').innerHTML = html;
-        });
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: data.datasets
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: { display: true, text: 'Average (%)' }
+            }
+          },
+          plugins: {
+            title: { display: true, text: 'Average Quiz Score per Topic' },
+            legend: { display: true }
+          }
+        }
+      });
+    });
 }
 
-document.getElementById('classFilter').addEventListener('change', loadResults);
-document.getElementById('quizFilter').addEventListener('change', loadResults);
+// --- Fungsi untuk load table (macam sebelum ni) ---
+function loadResults() {
+  const classId = document.getElementById('classFilter').value;
+  const quizId = document.getElementById('quizFilter').value;
 
-// Load table on page load
+  fetch(`view-result-data.php?class_id=${classId}&quiz_id=${quizId}`)
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('resultTable').innerHTML = html;
+    });
+}
+
+// --- Event listeners ---
+document.getElementById('classFilter').addEventListener('change', () => {
+  loadChart();
+  loadResults();
+});
+document.getElementById('quizFilter').addEventListener('change', () => {
+  loadChart();
+  loadResults();
+});
+
+// Load awal
+loadChart();
 loadResults();
 </script>
 </body>

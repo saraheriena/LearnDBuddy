@@ -10,8 +10,10 @@ if (!isset($_SESSION['student_id'])) {
 $student_id = $_SESSION['student_id'];
 $class_id = mysqli_fetch_assoc(mysqli_query($conn, "SELECT class_id FROM students WHERE student_id=$student_id"))['class_id'];
 
-// Ambil semua quiz untuk class dia dan juga All Classes
-$sql = "SELECT * FROM quizzes WHERE class_id=$class_id OR class_id IS NULL";
+// Ambil semua quiz untuk class dia dan juga All Classes, SUSUN IKUT TOPIC
+$sql = "SELECT * FROM quizzes 
+        WHERE class_id=$class_id OR class_id IS NULL 
+        ORDER BY topic ASC";
 $quizzes = mysqli_query($conn, $sql);
 ?>
 <!DOCTYPE html>

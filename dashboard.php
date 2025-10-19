@@ -10,7 +10,7 @@ if (!isset($_SESSION['lecturer_id'])) {
 
 $lecturer_name = $_SESSION['lecturer_name']; // 🔹 tambah line ni
 ?>
-?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
