@@ -1,7 +1,6 @@
 <?php
 include 'db.php';
 
-// Array untuk simpan error per field
 $errors = [
     'role' => '',
     'name' => '',
@@ -15,95 +14,100 @@ $errors = [
 $success_message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $role = $_POST['role'] ?? '';
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password_plain = trim($_POST['password'] ?? '');
-    $question = $_POST['security_question'] ?? '';
-    $answer = trim($_POST['security_answer'] ?? '');
-    $matric_no = trim($_POST['matric_no'] ?? '');
+    $role = trim($_POST['role']);
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+    $matric_no = $_POST['matric_no'] ?? '';
     $class_id = $_POST['class_id'] ?? '';
+    $question = $_POST['security_question'];
+    $answer = trim($_POST['security_answer']);
 
-    // Role validation
+    // Validation
     if (empty($role)) {
-        $errors['role'] = "Please select a role.";
+        $errors['role'] = 'Please select a role.';
     }
 
-    // Name validation
     if (empty($name)) {
-        $errors['name'] = "Full name is required.";
+        $errors['name'] = 'Full name is required.';
     }
 
-    // Email validation
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = "Valid email is required.";
+    if (empty($email)) {
+        $errors['email'] = 'Email is required.';
+    } else {
+        // Email domain validation based on role
+        if ($role === 'student' && !preg_match('/@student\.ptss\.edu\.my$/', $email)) {
+            $errors['email'] = 'Student email must end with @student.ptss.edu.my';
+        } elseif ($role === 'lecturer' && !preg_match('/@ptss\.edu\.my$/', $email)) {
+            $errors['email'] = 'Lecturer email must end with @ptss.edu.my';
+        }
+
+        // Check if email already exists in either table
+        $exists = false;
+
+        // Check students
+        $check1 = $conn->prepare("SELECT email FROM students WHERE email = ?");
+        $check1->bind_param("s", $email);
+        $check1->execute();
+        $result1 = $check1->get_result();
+        if ($result1->num_rows > 0) $exists = true;
+        $check1->close();
+
+        // Check lecturers
+        $check2 = $conn->prepare("SELECT email FROM lecturers WHERE email = ?");
+        $check2->bind_param("s", $email);
+        $check2->execute();
+        $result2 = $check2->get_result();
+        if ($result2->num_rows > 0) $exists = true;
+        $check2->close();
+
+        if ($exists) {
+            $errors['email'] = 'Email already registered.';
+        }
     }
 
-    // Password validation
-    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', $password_plain)) {
-    $errors['password'] = "Password must be 8+ chars, include uppercase, lowercase, number & symbol.";
+    if (empty($password)) {
+        $errors['password'] = 'Password is required.';
+    } elseif (strlen($password) < 6) {
+        $errors['password'] = 'Password must be at least 6 characters.';
     }
 
-    // Security question validation
-    if (empty($question) || empty($answer)) {
-        $errors['security'] = "Please select a security question and provide an answer.";
-    }
-
-    // Student-specific validation
     if ($role === 'student') {
         if (empty($matric_no)) {
-            $errors['matric_no'] = "Matric number is required.";
+            $errors['matric_no'] = 'Matric number is required.';
         }
-
         if (empty($class_id)) {
-            $errors['class_id'] = "Please select a class.";
+            $errors['class_id'] = 'Please select a class.';
         }
     }
 
-    // Email duplicate check across BOTH tables (lecturers + students)
-    if (empty($errors['email'])) {
-        // gunakan UNION untuk cari di kedua-dua jadual
-        $checkSql = "SELECT email FROM lecturers WHERE email = ? UNION SELECT email FROM students WHERE email = ?";
-        if ($checkEmail = $conn->prepare($checkSql)) {
-            // bind dua kali (sama email)
-            $checkEmail->bind_param("ss", $email, $email);
-            $checkEmail->execute();
-            $checkEmail->store_result();
-
-            if ($checkEmail->num_rows > 0) {
-                $errors['email'] = "This email is already registered.";
-            }
-            $checkEmail->close();
-        } else {
-            // fallback: jika prepare gagal (jarang), set generic error
-            $errors['email'] = "Error checking email uniqueness. Try again.";
-        }
+    if (empty($answer)) {
+        $errors['security'] = 'Security answer is required.';
     }
 
-    // Jika tiada error, insert ke database
+    // If no errors, proceed
     if (!array_filter($errors)) {
-        $password = password_hash($password_plain, PASSWORD_DEFAULT);
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        if ($role === 'lecturer') {
-            $stmt = $conn->prepare("INSERT INTO lecturers (fullname,email,password,security_question,security_answer) VALUES (?,?,?,?,?)");
-            $stmt->bind_param("sssss", $name, $email, $password, $question, $answer);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO students (fullname,email,password,matric_no,class_id,security_question,security_answer) VALUES (?,?,?,?,?,?,?)");
-            $stmt->bind_param("sssssss", $name, $email, $password, $matric_no, $class_id, $question, $answer);
+        if ($role === 'student') {
+            $stmt = $conn->prepare("INSERT INTO students (fullname, email, password, matric_no, class_id, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssss", $name, $email, $hashed_password, $matric_no, $class_id, $question, $answer);
+        } elseif ($role === 'lecturer') {
+            $stmt = $conn->prepare("INSERT INTO lecturers (fullname, email, password, security_question, security_answer) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $name, $email, $hashed_password, $question, $answer);
         }
 
         if ($stmt->execute()) {
-            // berjaya
             echo "<script>
-                alert('✅ Account created successfully! Please login now.');
-                window.location.href = 'login.php';
-            </script>";
-            $stmt->close();
-            exit;
+                    alert('✅ Account created successfully! You can now login.');
+                    window.location.href = 'login.php';
+                  </script>";
+            exit();
         } else {
-            $errors['password'] = "Registration failed: " . $stmt->error;
-            $stmt->close();
+            $errors['role'] = 'Something went wrong. Please try again.';
         }
+
+        $stmt->close();
     }
 }
 ?>

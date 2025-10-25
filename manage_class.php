@@ -12,24 +12,41 @@ $lecturer_id = $_SESSION['lecturer_id'];
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_class'])) {
   $class_name = trim($_POST['class_name']);
   if (!empty($class_name)) {
-    $stmt = $conn->prepare("INSERT INTO classes (class_name, lecturer_id) VALUES (?, ?)");
-    $stmt->bind_param("si", $class_name, $lecturer_id);
-    $stmt->execute();
-    header("Location: manage_class.php?msg=✅ Class added successfully");
-    exit;
+    // Check if class already exists globally
+    $check = $conn->prepare("SELECT * FROM classes WHERE class_name = ?");
+    $check->bind_param("s", $class_name);
+    $check->execute();
+    $exists = $check->get_result()->num_rows > 0;
+
+    if (!$exists) {
+      // Insert new class (still record who created it)
+      $stmt = $conn->prepare("INSERT INTO classes (class_name, lecturer_id) VALUES (?, ?)");
+      $stmt->bind_param("si", $class_name, $lecturer_id);
+      $stmt->execute();
+      header("Location: manage_class.php?msg=✅ Class added successfully");
+      exit;
+    } else {
+      header("Location: manage_class.php?msg=⚠️ Class name already exists");
+      exit;
+    }
   }
 }
 
 // Delete class
 if (isset($_GET['delete'])) {
-  $id = $_GET['delete'];
+  $id = (int)$_GET['delete'];
   $conn->query("DELETE FROM classes WHERE class_id=$id");
   header("Location: manage_class.php?msg=🗑️ Class deleted");
   exit;
 }
 
-// Fetch classes
-$res = $conn->query("SELECT * FROM classes WHERE lecturer_id=$lecturer_id");
+// Fetch ALL classes (global list, visible to every lecturer)
+$res = $conn->query("
+  SELECT c.class_id, c.class_name, l.fullname AS creator_name
+  FROM classes c
+  LEFT JOIN lecturers l ON c.lecturer_id = l.lecturer_id
+  ORDER BY c.class_id DESC
+");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,6 +60,7 @@ $res = $conn->query("SELECT * FROM classes WHERE lecturer_id=$lecturer_id");
   <h1>Manage Classes</h1>
   <a href="dashboard.php" class="logout">Back</a>
 </header>
+
 <main class="table-container">
   <form method="post" style="margin-bottom:15px;">
     <input type="text" name="class_name" placeholder="Enter new class name" required>
@@ -51,14 +69,21 @@ $res = $conn->query("SELECT * FROM classes WHERE lecturer_id=$lecturer_id");
 
   <table>
     <thead>
-      <tr><th>ID</th><th>Class Name</th><th>Action</th></tr>
+      <tr>
+        <th>Class Name</th>
+        <th>Created By</th>
+        <th>Action</th>
+      </tr>
     </thead>
     <tbody>
       <?php while($c = $res->fetch_assoc()): ?>
         <tr>
-          <td><?= $c['class_id']; ?></td>
           <td><?= htmlspecialchars($c['class_name']); ?></td>
-          <td><a href="manage_class.php?delete=<?= $c['class_id']; ?>" onclick="return confirm('Delete this class?')">Delete</a></td>
+          <td><?= htmlspecialchars($c['creator_name'] ?? 'Unknown'); ?></td>
+          <td>
+            <a href="manage_class.php?delete=<?= $c['class_id']; ?>" 
+               onclick="return confirm('Delete this class?')">Delete</a>
+          </td>
         </tr>
       <?php endwhile; ?>
     </tbody>

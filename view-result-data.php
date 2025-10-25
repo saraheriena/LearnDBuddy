@@ -2,9 +2,10 @@
 include "db.php";
 session_start();
 
-$lecturer_id = $_SESSION['lecturer_id'];
+$lecturer_id = $_SESSION['lecturer_id'] ?? 0;
 $class_id = $_GET['class_id'] ?? 'all';
-$quiz_id = $_GET['quiz_id'] ?? 'all';
+$quiz_id  = $_GET['quiz_id'] ?? 'all';
+$ai       = isset($_GET['ai']) ? intval($_GET['ai']) : 0;
 
 // Query asas
 $sql = "
@@ -15,6 +16,13 @@ $sql = "
     JOIN classes c ON s.class_id = c.class_id
     WHERE c.lecturer_id = $lecturer_id
 ";
+
+// 🧠 Tapisan AI Mode
+if ($ai == 1) {
+    $sql .= " AND q.ai_mode = 1"; // hanya tunjuk AI Challenge quiz
+} else {
+    $sql .= " AND (q.ai_mode = 0 OR q.ai_mode IS NULL)"; // hanya quiz biasa
+}
 
 // Tapis ikut class kalau bukan "all"
 if ($class_id != 'all') {
@@ -29,7 +37,8 @@ if ($quiz_id != 'all') {
 $sql .= " ORDER BY c.class_name, s.fullname";
 $result = $conn->query($sql);
 
-if ($result->num_rows > 0) {
+// Papar result
+if ($result && $result->num_rows > 0) {
     echo "<table>";
     echo "<thead><tr>
             <th>No.</th>
@@ -44,11 +53,11 @@ if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         echo "<tr>
                 <td>$no</td>
-                <td>".htmlspecialchars($row['fullname'])."</td>
-                <td>".htmlspecialchars($row['matric_no'])."</td>
-                <td>".htmlspecialchars($row['class_name'])."</td>
-                <td>".htmlspecialchars($row['quiz_title'])."</td>
-                <td>".$row['score']."</td>
+                <td>" . htmlspecialchars($row['fullname']) . "</td>
+                <td>" . htmlspecialchars($row['matric_no']) . "</td>
+                <td>" . htmlspecialchars($row['class_name']) . "</td>
+                <td>" . htmlspecialchars($row['quiz_title']) . "</td>
+                <td>" . htmlspecialchars($row['score']) . "</td>
               </tr>";
         $no++;
     }

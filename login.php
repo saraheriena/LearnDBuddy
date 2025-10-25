@@ -17,7 +17,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $row['password'])) {
             $_SESSION['lecturer_id'] = $row['lecturer_id'];
             $_SESSION['lecturer_name'] = $row['fullname'];
-            header("Location: dashboard.php");
+            $_SESSION['user_email'] = $email;
+            $_SESSION['role'] = 'lecturer';
+
+            // ✅ ubah sini → masuk ke intro.php dulu
+            header("Location: intro.php");
             exit;
         } else {
             header("Location: index.php?error=Invalid password");
@@ -36,10 +40,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $row['password'])) {
             $_SESSION['student_id'] = $row['student_id'];
             $_SESSION['student_name'] = $row['fullname'];
+            $_SESSION['user_email'] = $email;
+            $_SESSION['role'] = 'student';
             if (isset($row['class_id'])) {
                 $_SESSION['class_id'] = $row['class_id'];
             }
-            header("Location: student-dashboard.php");
+
+            // ✅ ubah sini → masuk ke intro.php dulu
+            header("Location: intro.php");
             exit;
         } else {
             header("Location: index.php?error=Invalid password");

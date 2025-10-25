@@ -2,15 +2,13 @@
 session_start();
 include 'db.php';
 
-
 if (!isset($_SESSION['lecturer_id'])) {
   header("Location: index.php");
   exit;
 }
 
-$lecturer_name = $_SESSION['lecturer_name']; // 🔹 tambah line ni
+$lecturer_name = $_SESSION['lecturer_name'] ?? 'Lecturer';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,7 +52,6 @@ $lecturer_name = $_SESSION['lecturer_name']; // 🔹 tambah line ni
       font-weight: bold;
     }
 
-    /* CENTERED DASHBOARD GRID */
     main.dashboard {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -84,84 +81,33 @@ $lecturer_name = $_SESSION['lecturer_name']; // 🔹 tambah line ni
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
 
-    /* FIX: ICON NO LONGER “BOUNCY” */
     .card i {
       font-size: 45px;
       color: #1e90ff;
       margin-bottom: 15px;
-      transition: none !important;
-      transform: none !important;
     }
 
-    .card h2 {
-      font-size: 20px;
-      margin: 10px 0 5px;
-      color: #333;
-    }
+    .card h2 { font-size: 20px; margin: 10px 0 5px; color: #333; }
+    .card p { color: #666; font-size: 14px; margin-bottom: 15px; }
 
-    .card p {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 15px;
-    }
-
-    .card button {
-      background: #1e90ff;
-      color: #fff;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .card button:hover {
-      background: #187bcd;
-    }
+    .card button { background: #1e90ff; color: #fff; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .card button:hover { background: #187bcd; }
 
     @media (max-width: 768px) {
-      main.dashboard {
-        grid-template-columns: 1fr;
-      }
+      main.dashboard { grid-template-columns: 1fr; }
     }
 
-    /* Toast message */
-    .toast {
-      visibility: hidden;
-      min-width: 250px;
-      background: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 4px;
-      padding: 12px;
-      position: fixed;
-      left: 50%;
-      bottom: 30px;
-      transform: translateX(-50%);
-      font-size: 14px;
-    }
-
-    .toast.show {
-      visibility: visible;
-      animation: fadein 0.5s, fadeout 0.5s 3.5s;
-    }
-
-    @keyframes fadein {
-      from { bottom: 10px; opacity: 0; }
-      to { bottom: 30px; opacity: 1; }
-    }
-
-    @keyframes fadeout {
-      from { bottom: 30px; opacity: 1; }
-      to { bottom: 10px; opacity: 0; }
-    }
+    .toast { visibility: hidden; min-width: 250px; background: #333; color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
+    .toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 3.5s; }
+    @keyframes fadein { from { bottom: 10px; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+    @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 10px; opacity: 0; } }
   </style>
 </head>
 <body>
   <header>
     <div class="header-left">
       <img src="logo.png" alt="LearnDBuddy Logo" style="height:50px;">
-      <h1>Welcome, <?php echo htmlspecialchars($lecturer_name); ?></h1>
+      <h1>Welcome, <?= htmlspecialchars($lecturer_name) ?></h1>
     </div>
     <a href="logout.php" class="logout">Logout</a>
   </header>
@@ -184,25 +130,21 @@ $lecturer_name = $_SESSION['lecturer_name']; // 🔹 tambah line ni
     <div class="card">
       <i class="fas fa-edit"></i>
       <h2>Edit Quizzes</h2>
-      <p>Create, update, or delete quizzes for your classes.</p>
-      <a href="edit-quiz.php"><button>Go</button></a>
+      <p>Choose to manage Practice Quizzes or Assessment.</p>
+      <a href="choose_edit_quiz.php"><button>Go</button></a>
     </div>
 
     <div class="card">
       <i class="fas fa-chart-bar"></i>
       <h2>View Student Results</h2>
-      <p>View performance and quiz analytics by class.</p>
-      <a href="view-result.php"><button>Go</button></a>
+      <p>View performance Quiz and Assessment result by class.</p>
+      <a href="choose_view_result.php"><button>Go</button></a>
     </div>
   </main>
 
   <?php if (isset($_GET['msg'])): ?>
-    <div id="toast" class="toast show">
-      <?= htmlspecialchars($_GET['msg']); ?>
-    </div>
-    <script>
-      setTimeout(() => document.getElementById('toast').classList.remove('show'), 4000);
-    </script>
+    <div id="toast" class="toast show"><?= htmlspecialchars($_GET['msg']); ?></div>
+    <script>setTimeout(() => document.getElementById('toast').classList.remove('show'), 4000);</script>
   <?php endif; ?>
 </body>
 </html>

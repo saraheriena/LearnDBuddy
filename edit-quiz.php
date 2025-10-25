@@ -63,6 +63,23 @@ $quizzes = mysqli_query($conn, $quiz_query);
   <meta charset="UTF-8">
   <title>Edit Quiz - LearnDBuddy</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    input[type="text"], select {
+      width: 95%;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -86,11 +103,11 @@ $quizzes = mysqli_query($conn, $quiz_query);
 
       <select name="topic" required>
         <option value="">-- Select Topic --</option>
-        <option value="1">Topic 1</option>
-        <option value="2">Topic 2</option>
-        <option value="3">Topic 3</option>
-        <option value="4">Topic 4</option>
-        <option value="5">Topic 5</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
       </select>
 
       <button type="submit" name="create_quiz">Create Quiz</button>
@@ -101,19 +118,22 @@ $quizzes = mysqli_query($conn, $quiz_query);
     <h3>All Quizzes</h3>
     <table>
       <thead>
-        <tr><th>ID</th><th>Title</th><th>Class</th><th>Topic</th><th>Actions</th></tr>
+        <tr>
+          <th>Title</th>
+          <th>Class</th>
+          <th>Topic</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         <?php while($q = mysqli_fetch_assoc($quizzes)) { ?>
           <tr>
-            <td><?= $q['quiz_id']; ?></td>
-            <td><?= htmlspecialchars($q['title']); ?></td>
-            <td><?= is_null($q['class_id']) ? 'All Classes' : htmlspecialchars($q['class_name'] ?? 'Unassigned'); ?></td>
-            <td><?= $q['topic'] ? 'Topic '.$q['topic'] : '-'; ?></td>
             <td>
-              <form method="post" style="display:inline;">
+              <form method="post" style="display:flex; align-items:center; gap:5px;">
                 <input type="hidden" name="quiz_id" value="<?= $q['quiz_id']; ?>">
                 <input type="text" name="title" value="<?= htmlspecialchars($q['title']); ?>">
+            </td>
+            <td>
                 <select name="class_id">
                   <option value="0" <?= is_null($q['class_id']) ? 'selected' : ''; ?>>All Classes</option>
                   <?php
@@ -124,16 +144,20 @@ $quizzes = mysqli_query($conn, $quiz_query);
                   }
                   ?>
                 </select>
+            </td>
+            <td>
                 <select name="topic">
-                  <option value="0" <?= !$q['topic'] ? 'selected' : ''; ?>>No Topic</option>
+                  <option value="0" <?= !$q['topic'] ? 'selected' : ''; ?>>-</option>
                   <?php for ($t=1; $t<=5; $t++): ?>
-                    <option value="<?= $t; ?>" <?= ($q['topic']==$t)?'selected':''; ?>>Topic <?= $t; ?></option>
+                    <option value="<?= $t; ?>" <?= ($q['topic']==$t)?'selected':''; ?>><?= $t; ?></option>
                   <?php endfor; ?>
                 </select>
+            </td>
+            <td>
                 <button type="submit" name="update_quiz">Update</button>
+                <a href="edit-quiz.php?delete_quiz=<?= $q['quiz_id']; ?>" onclick="return confirm('Delete this quiz?');"><button type="button">Delete</button></a>
+                <a href="add-questions.php?quiz_id=<?= $q['quiz_id']; ?>"><button type="button">View/Add Questions</button></a>
               </form>
-              <a href="edit-quiz.php?delete_quiz=<?= $q['quiz_id']; ?>" onclick="return confirm('Delete this quiz?');"><button type="button">Delete</button></a>
-              <a href="add-questions.php?quiz_id=<?= $q['quiz_id']; ?>"><button type="button">View/Add Questions</button></a>
             </td>
           </tr>
         <?php } ?>

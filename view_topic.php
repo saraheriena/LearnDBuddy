@@ -57,7 +57,6 @@ if ($hasTopicColumn) {
   $stmt->execute();
   $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 } else {
-  // Tiada lajur 'topic': ambil semua, tapis di PHP
   $stmt = $conn->prepare("
     SELECT note_id, title, file_path
     FROM notes
@@ -92,76 +91,6 @@ foreach ($rows as $r) {
 $pdfCount = count($pdfNotes);
 
 // ================================
-// DOWNLOAD PDF TOPIK INI (ZIP)
-// ================================
-if (isset($_GET['download_all']) && $_GET['download_all'] == '1') {
-  if ($pdfCount === 0) {
-    http_response_code(404);
-    echo "Tiada PDF untuk dimuat turun.";
-    exit;
-  }
-  if (!class_exists('ZipArchive')) {
-    http_response_code(500);
-    echo "PHP ZipArchive tidak tersedia. Sila aktifkan extension zip.";
-    exit;
-  }
-
-  $zipFileName = "topic{$topic}_pdfs_" . date('Ymd_His') . ".zip";
-  $tmpZipPath  = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zipFileName;
-
-  $zip = new ZipArchive();
-  if ($zip->open($tmpZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
-    http_response_code(500);
-    echo "Gagal mencipta ZIP.";
-    exit;
-  }
-
-  foreach ($pdfNotes as $p) {
-    $filePath = $p['file_path'] ?? '';
-    if (!$filePath) continue;
-    $fullPath = $uploadsDir . DIRECTORY_SEPARATOR . basename($filePath);
-    if (!is_file($fullPath)) continue;
-
-    $safeTitle = preg_replace('/[^a-zA-Z0-9_\- ]/', '_', $p['title'] ?? 'untitled');
-    $zip->addFile($fullPath, $safeTitle . '.pdf');
-  }
-
-  $zip->close();
-
-  header('Content-Type: application/zip');
-  header('Content-Disposition: attachment; filename="'.$zipFileName.'"');
-  header('Content-Length: ' . filesize($tmpZipPath));
-  readfile($tmpZipPath);
-  @unlink($tmpZipPath);
-  exit;
-}
-
-// ================================
-// Important Notes (ambil dari topic_info jika ada)
-// ================================
-$importantNotes = "Tiada catatan penting direkodkan untuk Topik $topic lagi.";
-$checkInfoTable = $conn->query("SHOW TABLES LIKE 'topic_info'");
-if ($checkInfoTable && $checkInfoTable->num_rows > 0) {
-  $hasImportantCol = false;
-  $colRes = $conn->query("SHOW COLUMNS FROM topic_info LIKE 'important_notes'");
-  if ($colRes && $colRes->num_rows > 0) $hasImportantCol = true;
-
-  if ($hasImportantCol) {
-    $stmtImp = $conn->prepare("SELECT important_notes FROM topic_info WHERE class_id = ? AND topic = ?");
-    $stmtImp->bind_param("ii", $class_id, $topic);
-    $stmtImp->execute();
-    $impRes = $stmtImp->get_result()->fetch_assoc();
-    if (!empty($impRes['important_notes'])) $importantNotes = $impRes['important_notes'];
-  } else {
-    $stmtImp = $conn->prepare("SELECT description FROM topic_info WHERE class_id = ? AND topic = ?");
-    $stmtImp->bind_param("ii", $class_id, $topic);
-    $stmtImp->execute();
-    $impRes = $stmtImp->get_result()->fetch_assoc();
-    if (!empty($impRes['description'])) $importantNotes = $impRes['description'];
-  }
-}
-
-// ================================
 // Ambil quiz ikut topik ini
 // ================================
 $quizStmt = $conn->prepare("SELECT quiz_id, title FROM quizzes WHERE topic = ?");
@@ -169,7 +98,6 @@ $quizStmt->bind_param("i", $topic);
 $quizStmt->execute();
 $quizRes = $quizStmt->get_result();
 $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -207,16 +135,12 @@ $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
 <main class="dashboard" style="flex-direction:column;align-items:stretch;gap:16px;padding-top:16px;">
   <div class="topic-wrap">
 
-   
-
-    <!-- Kad: PDF Files (download 1-1 & ZIP Topik Ini) -->
+    <!-- Kad: PDF Files -->
     <div class="form-container">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
         <h3 class="section-title" style="margin:0;">
           <i class="fas fa-file-pdf"></i> PDF Files
         </h3>
-
-       
       </div>
 
       <?php if ($pdfCount > 0): ?>
@@ -240,7 +164,7 @@ $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
           <?php endforeach; ?>
         </ul>
       <?php else: ?>
-        <p style="margin:10px 0 0;color:#666;">Tiada PDF untuk topik ini.</p>
+        <p style="margin:10px 0 0;color:#666;">No note available for this topic yet.</p>
       <?php endif; ?>
     </div>
 
@@ -257,8 +181,9 @@ $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
             <div class="card" style="width:320px;">
               <i class="fas fa-file-video"></i>
               <h2><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></h2>
-              <video controls width="100%">
-                <source src="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
+              <video controls preload="metadata" style="width:100%;border-radius:8px;">
+                <source src="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                Your browser does not support the video tag.
               </video>
             </div>
           <?php endforeach; ?>
@@ -269,28 +194,28 @@ $quizzes = $quizRes->fetch_all(MYSQLI_ASSOC);
     </div>
 
     <!-- Kad: Quiz untuk topik ini -->
-<div class="form-container" style="text-align:center;">
-  <h3 class="section-title" style="justify-content:center;">
-    <i class="fas fa-question-circle"></i> Ready to test your knowledge
-  </h3>
+    <div class="form-container" style="text-align:center;">
+      <h3 class="section-title" style="justify-content:center;">
+        <i class="fas fa-question-circle"></i> Ready to test your knowledge
+      </h3>
 
-  <?php if (!empty($quizzes)): ?>
-    <ul style="list-style:none; padding:0; margin:10px 0;">
-      <?php foreach ($quizzes as $q): ?>
-        <li style="margin-bottom:8px;">
-          <a href="start_quiz.php?quiz_id=<?= $q['quiz_id']; ?>" 
-             class="btn-primary" 
-             style="display:inline-block; text-decoration:none;">
-             <?= htmlspecialchars($q['title']); ?>
-          </a>
-        </li>
-      <?php endforeach; ?>
-    </ul>
-  <?php else: ?>
-    <p style="color:gray;">No quiz available for this topic yet.</p>
-  <?php endif; ?>
-</div>
-
+      <?php if (!empty($quizzes)): ?>
+        <ul style="list-style:none; padding:0; margin:10px 0;">
+          <?php foreach ($quizzes as $q): ?>
+            <li style="margin-bottom:8px;">
+              <a href="start_quiz.php?quiz_id=<?= $q['quiz_id']; ?>" 
+                 class="btn-primary" 
+                 style="display:inline-block; text-decoration:none;">
+                 <?= htmlspecialchars($q['title']); ?>
+              </a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php else: ?>
+        <p style="color:gray;">No quiz available for this topic yet.</p>
+      <?php endif; ?>
+    </div>
+  </div>
 </main>
 </body>
 </html>

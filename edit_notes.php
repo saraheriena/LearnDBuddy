@@ -10,19 +10,17 @@ if (!isset($_SESSION['lecturer_id'])) {
 $edit_mode = false;
 $edit_note = null;
 
-// DELETE NOTE
+// DELETE NOTE (Semua lecturer boleh delete)
 if (isset($_GET['delete'])) {
   $note_id = intval($_GET['delete']);
-  $file_query = $conn->prepare("SELECT file_path FROM notes WHERE note_id=? AND lecturer_id=?");
-  $file_query->bind_param("ii", $note_id, $_SESSION['lecturer_id']);
+  $file_query = $conn->prepare("SELECT file_path FROM notes WHERE note_id=?");
+  $file_query->bind_param("i", $note_id);
   $file_query->execute();
   $file_result = $file_query->get_result()->fetch_assoc();
 
   if ($file_result) {
     $file_path = $file_result['file_path'];
-    $del_stmt = $conn->prepare("DELETE FROM notes WHERE note_id=? AND lecturer_id=?");
-    $del_stmt->bind_param("ii", $note_id, $_SESSION['lecturer_id']);
-    $del_stmt->execute();
+    $conn->query("DELETE FROM notes WHERE note_id=$note_id");
     if (file_exists($file_path)) unlink($file_path);
   }
   header("Location: edit_notes.php");
@@ -33,8 +31,8 @@ if (isset($_GET['delete'])) {
 if (isset($_GET['edit'])) {
   $edit_id = intval($_GET['edit']);
   $edit_mode = true;
-  $edit_stmt = $conn->prepare("SELECT * FROM notes WHERE note_id=? AND lecturer_id=?");
-  $edit_stmt->bind_param("ii", $edit_id, $_SESSION['lecturer_id']);
+  $edit_stmt = $conn->prepare("SELECT * FROM notes WHERE note_id=?");
+  $edit_stmt->bind_param("i", $edit_id);
   $edit_stmt->execute();
   $edit_note = $edit_stmt->get_result()->fetch_assoc();
 }
@@ -49,13 +47,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
   // === UPDATE MODE ===
   if ($note_id > 0) {
-    $old_stmt = $conn->prepare("SELECT file_path FROM notes WHERE note_id=? AND lecturer_id=?");
-    $old_stmt->bind_param("ii", $note_id, $_SESSION['lecturer_id']);
+    $old_stmt = $conn->prepare("SELECT file_path FROM notes WHERE note_id=?");
+    $old_stmt->bind_param("i", $note_id);
     $old_stmt->execute();
     $old_file = $old_stmt->get_result()->fetch_assoc();
     $targetFile = $old_file['file_path'];
 
-    // upload fail baru
+    // upload fail baru kalau ada
     if (!empty($file['name']) && $file['error'] === 0) {
       $targetDir = "uploads/";
       if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
@@ -66,8 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($class_id === "all") {
-      // delete lama, insert semula untuk semua kelas
-      $conn->query("DELETE FROM notes WHERE note_id=$note_id AND lecturer_id=" . $_SESSION['lecturer_id']);
+      $conn->query("DELETE FROM notes WHERE note_id=$note_id");
       $all_classes = $conn->query("SELECT class_id FROM classes");
       while ($c = $all_classes->fetch_assoc()) {
         $stmt = $conn->prepare("INSERT INTO notes (lecturer_id, class_id, title, file_path, topic) VALUES (?, ?, ?, ?, ?)");
@@ -75,9 +72,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmt->execute();
       }
     } else {
-      // update biasa
-      $stmt = $conn->prepare("UPDATE notes SET title=?, class_id=?, file_path=?, topic=? WHERE note_id=? AND lecturer_id=?");
-      $stmt->bind_param("sisiii", $title, $class_id, $targetFile, $topic, $note_id, $_SESSION['lecturer_id']);
+      $stmt = $conn->prepare("UPDATE notes SET title=?, class_id=?, file_path=?, topic=? WHERE note_id=?");
+      $stmt->bind_param("sisii", $title, $class_id, $targetFile, $topic, $note_id);
       $stmt->execute();
     }
 
@@ -112,18 +108,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   exit;
 }
 
-// FETCH DATA
+// FETCH SEMUA NOTA (GLOBAL)
 $class_query = $conn->query("SELECT * FROM classes");
-$notes_query = $conn->prepare("
+$notes_query = $conn->query("
   SELECT n.*, c.class_name
   FROM notes n
   JOIN classes c ON n.class_id = c.class_id
-  WHERE n.lecturer_id = ?
   ORDER BY n.note_id DESC
 ");
-$notes_query->bind_param("i", $_SESSION['lecturer_id']);
-$notes_query->execute();
-$notes_result = $notes_query->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -202,27 +194,26 @@ $notes_result = $notes_query->get_result();
         <th>Title</th>
         <th>Topic</th>
         <th>Class</th>
-        <th>File</th>
         <th>Action</th>
       </tr>
       <?php 
       $no = 1;
-      if ($notes_result->num_rows > 0):
-        while ($note = $notes_result->fetch_assoc()): ?>
+      if ($notes_query->num_rows > 0):
+        while ($note = $notes_query->fetch_assoc()): ?>
           <tr>
             <td><?= $no++; ?></td>
             <td><?= htmlspecialchars($note['title']); ?></td>
             <td><?= htmlspecialchars($note['topic']); ?></td>
             <td><?= htmlspecialchars($note['class_name']); ?></td>
-            <td><a href="<?= htmlspecialchars($note['file_path']); ?>" target="_blank">View</a></td>
             <td>
+              <a href="<?= htmlspecialchars($note['file_path']); ?>" target="_blank">View</a> | 
               <a href="?edit=<?= $note['note_id']; ?>">Edit</a> | 
               <a href="?delete=<?= $note['note_id']; ?>" onclick="return confirm('Delete this note?');">Delete</a>
             </td>
           </tr>
         <?php endwhile;
       else: ?>
-        <tr><td colspan="6" style="text-align:center;">No notes uploaded yet.</td></tr>
+        <tr><td colspan="5" style="text-align:center;">No notes uploaded yet.</td></tr>
       <?php endif; ?>
     </table>
   </div>
